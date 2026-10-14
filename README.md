@@ -4,7 +4,11 @@ Plugin ESM/TypeScript que añade Brave como proveedor de la herramienta nativa `
 
 ## Compatibilidad y arquitectura
 
-La implementación se basa en el repositorio oficial local `../deepseek-harness`, revisión `571902028a75c64c1d767f4ae5fd099485f0ddf0`, versión `0.2.1-alpha.3`. Las dependencias peer están fijadas a esa versión y a sus versiones de Cordis/Schemastery; otras versiones de Harness necesitan revisar compatibilidad antes de cambiar los rangos. No se ha usado código de plugins comunitarios.
+La implementación se basa en el repositorio oficial local `../deepseek-harness`, revisión `639ed015397290b3745d163aafe02ffee4aa3f84`, tag `dsh-v0.2.0-rc.2`, versión `0.2.0-rc.2`. Las dependencias peer están fijadas a esa versión y a sus versiones de Cordis/Schemastery; otras versiones de Harness necesitan revisar compatibilidad antes de cambiar los rangos. No se ha usado código de plugins comunitarios.
+
+La versión **0.1.1** del plugin utiliza `@deepseek-ai/dsh-web@0.2.0-rc.2`, `@deepseek-ai/cordis@4.0.4` y `@deepseek-ai/schemastery@3.18.4`. Las pruebas utilizan el Loader `1.0.5` y los paquetes oficiales de herramientas `0.2.0-rc.2`. No requiere excepciones de compatibilidad ni opciones que ignoren las dependencias peer.
+
+Se compararon las interfaces y la implementación del registro web, sus tipos, la herramienta nativa y la configuración volátil con la referencia anterior: las APIs utilizadas por este adaptador no cambiaron. Por ello se conserva íntegra la implementación Brave (HTTP, límites, errores, cancelación y configuración) y se valida con las dependencias de la versión objetivo. El patch del bundle sigue seleccionando `brave` mediante la fila `web` del perfil base.
 
 Referencias examinadas en ese repositorio:
 
@@ -33,14 +37,14 @@ npm test
 npm pack
 ```
 
-`npm pack` crea `deepseek-harness-brave-search-0.1.0.tgz` localmente; no publica nada. El paquete contiene JavaScript compilado y declaraciones, patch, metadatos, icono y README. No incluye fuentes de pruebas, claves, `.env`, cachés ni `node_modules`. Las dependencias de ejecución son únicamente las APIs oficiales de Harness; el Loader adicional se usa solo en pruebas.
+`npm pack` crea `deepseek-harness-brave-search-0.1.1.tgz` localmente; no publica nada. El paquete contiene JavaScript compilado y declaraciones, patch, metadatos, icono y README. No incluye fuentes de pruebas, claves, `.env`, cachés ni `node_modules`. Las dependencias de ejecución son únicamente las APIs oficiales de Harness; el Loader y los paquetes de la herramienta nativa se usan solo en pruebas.
 
 ## Instalación posterior en Windows
 
 Estos pasos son para cuando decidas probarlo; durante el desarrollo no se ha instalado en Harness.
 
 1. Compila, prueba y empaqueta en WSL o el contenedor con los comandos anteriores.
-2. Copia el `.tgz` a una ruta de Windows, por ejemplo `C:\Users\TU_USUARIO\Downloads\deepseek-harness-brave-search-0.1.0.tgz`. Puedes copiarlo desde el Explorador mediante `\\wsl.localhost\NOMBRE_DISTRO\home\ivan\projects\deepseek-harness-brave-search`. No copies `node_modules` de Linux ni uses `/home/...` como ruta en la aplicación Windows.
+2. Copia el `.tgz` a una ruta de Windows, por ejemplo `C:\Users\TU_USUARIO\Downloads\deepseek-harness-brave-search-0.1.1.tgz`. Puedes copiarlo desde el Explorador mediante `\\wsl.localhost\NOMBRE_DISTRO\home\ivan\projects\deepseek-harness-brave-search`. No copies `node_modules` de Linux ni uses `/home/...` como ruta en la aplicación Windows.
 3. En Harness abre **Plugins → Add plugin / Install a third-party plugin**, introduce la ruta absoluta del `.tgz`, revisa la procedencia y selecciona **Install**, después **Enable now**. El gestor nativo acepta tarballs y rutas locales. No se necesita `npm publish` ni instalar un plugin comunitario.
 4. Configura la clave como se indica abajo. Si el gestor indica `restart-required`, cierra y vuelve a abrir Harness. Una sustitución de una versión ya instalada también requiere seguir el flujo de actualización del gestor y reiniciar según su estado.
 5. Verifica que el bundle esté activo y que no aparezcan `failed`, `overridden` ni errores de compatibilidad. Un override del perfil o del home puede prevalecer sobre el bundle y mantener otro buscador.
@@ -75,5 +79,7 @@ Referencia oficial de [Brave Web Search](https://api-dashboard.search.brave.com/
 ## Pruebas y validación pendiente
 
 Las pruebas sustituyen `fetch` por respuestas simuladas y crean valores aleatorios exclusivamente de prueba; no leen claves del entorno ni consumen créditos. Cubren transformación y límites, resultados vacíos/malformados, errores HTTP, red/JSON, pausa 429, consultas concurrentes, cancelación y timeout. Una prueba usa Cordis, WebRuntime y Loader oficiales para verificar registro, cambios de clave en caliente y limpieza al descargar el plugin.
+
+Validación de 0.1.1: compilación TypeScript y **20 pruebas correctas** con Node 24.22.0. La prueba adicional monta `SystemPrompt`, `ToolRuntime`, `WebRuntime`, el plugin Brave y `ToolWeb` de `0.2.0-rc.2`; ejecuta `web_search` con dos consultas y verifica las fuentes y citas renderizadas. Un segundo proveedor disponible comprueba que la selección explícita de Brave prevalece. El árbol de dependencias se verificó con `npm ls --all`, sin conflictos peer obligatorios. Esto valida la integración con el runtime publicado, sin iniciar la aplicación de Windows.
 
 Queda por comprobar en tu Windows: que la versión instalada sea compatible, la instalación/activación del bundle, metadatos visibles, selección efectiva de Brave, configuración del perfil y una búsqueda real desde un agente con `web_search` habilitado. Esa última prueba requiere tu autorización y clave y consumirá cuota. La imagen del Dev Container también debe arrancarse en tu VS Code; compilar y probar en WSL no equivale a verificar el contenedor ni la UI de Windows.

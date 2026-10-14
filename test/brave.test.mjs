@@ -4,6 +4,10 @@ import { randomUUID } from 'node:crypto'
 import { Context } from '@deepseek-ai/cordis'
 import Loader from '@deepseek-ai/cordis-plugin-loader'
 import WebRuntime from '@deepseek-ai/dsh-web'
+import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
+import ToolRuntime from '@deepseek-ai/dsh-tools'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
+import * as ToolWeb from '@deepseek-ai/dsh-tool-web'
 import * as plugin from '../dist/index.js'
 import { BRAVE_ENDPOINT, BraveSearchProvider } from '../dist/provider.js'
 
@@ -187,6 +191,44 @@ test('native Cordis registration, live key update and disposal', async () => {
     await fiber.dispose()
     await assert.rejects(ctx.web.search({ query: 'disposed' }), code('WEB_PROVIDER_CONFIGURED_MISSING'))
     assert.equal(plugin.Config.dict.apiKey.meta.role, 'secret')
+  } finally {
+    await ctx.fiber.dispose()
+  }
+})
+
+test('rc.2 native web_search selects Brave and renders multi-query citations', async () => {
+  const ctx = new Context()
+  try {
+    await ctx.plugin(SystemPrompt)
+    await ctx.plugin(ToolRuntime)
+    await ctx.plugin(WebRuntime, { searchProvider: 'brave', fetchProvider: 'http' })
+    // A second usable provider must not make selection ambiguous or receive calls.
+    ctx.web.registerSearchProvider({
+      id: 'deepseek-official', available: () => true,
+      search: () => { throw Error('Wrong provider selected') },
+    })
+    await ctx.plugin(plugin, options({ minIntervalMs: 5 }))
+    await ctx.plugin(ToolWeb, { fetch: false })
+    const seen = []
+    mock.method(globalThis, 'fetch', async (url) => {
+      const query = url.searchParams.get('q')
+      seen.push(query)
+      return json(payload([{ ...result, title: query, url: `https://example.org/${query}` }]))
+    })
+    const output = await ctx.tools.execute({
+      callId: ToolCallId('brave-compatibility'), name: 'web_search',
+      arguments: { queries: ['one', 'two'] }, signal: new AbortController().signal,
+    })
+    assert.equal(output.isError, false)
+    assert.deepEqual(seen.sort(), ['one', 'two'])
+    assert.deepEqual(output.value, {
+      sources: ['one', 'two'].map(query => ({
+        title: query, url: `https://example.org/${query}`, snippet: result.description,
+      })), truncated: false,
+    })
+    const rendered = output.content.filter(block => block.type === 'text').map(block => block.text).join('')
+    assert.match(rendered, /\[one\]\(https:\/\/example.org\/one\)/u)
+    assert.match(rendered, /Useful description/u)
   } finally {
     await ctx.fiber.dispose()
   }
