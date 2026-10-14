@@ -3,6 +3,7 @@ import type { Context, Volatile } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-web'
 import { BraveSearchProvider } from './provider.js'
+import { BraveSettingsService } from './settings-service.js'
 
 export { BraveSearchProvider } from './provider.js'
 export const name = 'deepseek-harness-brave-search'
@@ -31,4 +32,8 @@ export function apply(ctx: Context, config: Config): void {
     minIntervalMs: config.minIntervalMs.get(),
     maxResults: config.maxResults.get(),
   })))
+  // Headless compositions can use search without mounting the graphical settings services.
+  ctx.inject(['settings', 'configEditor', 'typert'], inner => {
+    new BraveSettingsService(inner, config)
+  })
 }
