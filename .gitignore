@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.tools/
+.npm-cache/
+*.tgz
+.env
+.env.*
+*.local.yml

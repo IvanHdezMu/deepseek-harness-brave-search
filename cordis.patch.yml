@@ -1,0 +1,11 @@
+# The base profile already owns web and the native web_search tool.
+- insert:
+    - id: deepseek-harness-brave-search
+      name: deepseek-harness-brave-search
+      config: {}
+
+# Cordis replaces the entire config: preserve the base HTTP fetch provider.
+- id: web
+  config:
+    searchProvider: brave
+    fetchProvider: http

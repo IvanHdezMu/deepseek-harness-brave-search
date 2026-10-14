@@ -1,0 +1,7 @@
+{
+  "name": "DeepSeek Harness Brave Search",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:24-bookworm",
+  "remoteUser": "node",
+  "postCreateCommand": "npm ci --ignore-scripts",
+  "customizations": { "vscode": { "settings": { "typescript.tsdk": "node_modules/typescript/lib" } } }
+}

@@ -1,0 +1,8 @@
+# Merge this row into the active profile's cordis.patch.yml after installation.
+# The Windows process launching Harness must inherit BRAVE_SEARCH_API_KEY.
+- id: deepseek-harness-brave-search
+  config:
+    apiKey: !!js process.env.BRAVE_SEARCH_API_KEY
+    timeoutMs: 15000
+    minIntervalMs: 1100
+    maxResults: 5
